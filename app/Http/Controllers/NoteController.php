@@ -3,52 +3,57 @@
 namespace App\Http\Controllers;
 
 use App\Models\Note;
+use App\Models\LoanRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class NoteController extends Controller
 {
-    public function index()
+    public function index($loanRequestId)
     {
-        $notes = Note::all();
-        return view('notes.index', compact('notes'));
+        $loanRequest = LoanRequest::findOrFail($loanRequestId);
+        $user = Auth::user();
+        
+        // Check authorization
+        if ($user->agriculteur && $loanRequest->agriculteur_id !== $user->agriculteur->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        return response()->json($loanRequest->notes);
     }
 
-    public function create()
+    public function update(Request $request, $id)
     {
-        return view('notes.create');
-    }
+        $note = Note::findOrFail($id);
+        $loanRequest = $note->loanRequest;
+        $user = Auth::user();
+        
+        // Check authorization - only agent BNA can edit notes
+        if (!$user->agentBNA) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            // règles de validation
+        $validated = $request->validate([
+            'content' => 'required|string',
         ]);
-        Note::create($data);
-        return redirect()->route('notes.index');
+
+        $note->edit($validated['content']);
+
+        return response()->json($note);
     }
 
-    public function show(Note $note)
+    public function destroy($id)
     {
-        return view('notes.show', compact('note'));
-    }
+        $note = Note::findOrFail($id);
+        $user = Auth::user();
+        
+        // Check authorization - only agent BNA can delete notes
+        if (!$user->agentBNA) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
-    public function edit(Note $note)
-    {
-        return view('notes.edit', compact('note'));
-    }
-
-    public function update(Request $request, Note $note)
-    {
-        $data = $request->validate([
-            // règles de validation
-        ]);
-        $note->update($data);
-        return redirect()->route('notes.index');
-    }
-
-    public function destroy(Note $note)
-    {
         $note->delete();
-        return redirect()->route('notes.index');
+
+        return response()->json(['message' => 'Note deleted successfully']);
     }
 }

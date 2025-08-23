@@ -2,14 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AgentBNA extends Model
 {
+    use HasFactory;
+    
+    protected $table = 'agent_bna';
+
     protected $fillable = [
         'user_id',
-        'employeeId',
-        'branch',
+        'employee_id',
+        'agency_id'
     ];
 
     public function user()
@@ -17,18 +22,39 @@ class AgentBNA extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function notes()
+    // Methods that would be implemented in a controller
+    public function viewAllLoanRequests($filter)
     {
-        return $this->hasMany(Note::class);
+        // Implementation would be in controller
     }
 
-    public function assignedRequests()
+    public function viewAllComplaints()
     {
-        return $this->hasMany(LoanRequest::class, 'agent_bna_id');
+        // Implementation would be in controller
     }
 
-    public function complaints()
+    public function respondToComplaint($complaintId, $dto)
     {
-        return $this->hasMany(Complaint::class, 'agent_bna_id');
+        // Implementation would be in controller
+    }
+
+    public function requestMissingDocuments($loanRequestId, $requestedDocuments)
+    {
+        // Implementation would be in controller
+    }
+
+    public function openLoanRequest($id)
+    {
+        // Implementation would be in controller
+    }
+
+    public function addNoteToFile($loanRequestId, $dto)
+    {
+        // Implementation would be in controller
+    }
+
+    public function changeLoanStatus($loanRequestId, $newStatus, $comment)
+    {
+        // Implementation would be in controller
     }
 }

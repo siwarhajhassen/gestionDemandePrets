@@ -1,25 +1,44 @@
 @extends('layouts.app')
 
+@section('title', 'Modifier la demande de prêt')
+
 @section('content')
-<div class="container">
-    <h1>Modifier la demande de prêt</h1>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center">Modifier la demande #{{ $loanRequest->id }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ route('loan-requests.update', $loanRequest->id) }}">
+                    @csrf
+                    @method('PUT')
+                    <div class="mb-3">
+                        <label for="amount_requested" class="form-label">Montant demandé (€)</label>
+                        <input type="number" step="0.01" class="form-control @error('amount_requested') is-invalid @enderror" 
+                               id="amount_requested" name="amount_requested" 
+                               value="{{ old('amount_requested', $loanRequest->amount_requested) }}" required>
+                        @error('amount_requested')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
 
-    <form method="POST" action="{{ route('loanrequests.update', $loanrequest->id) }}">
-        @csrf @method('PUT')
+                    <div class="mb-3">
+                        <label for="purpose" class="form-label">Objectif du prêt</label>
+                        <textarea class="form-control @error('purpose') is-invalid @enderror" 
+                                  id="purpose" name="purpose" rows="4" required>{{ old('purpose', $loanRequest->purpose) }}</textarea>
+                        @error('purpose')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
 
-        <div class="mb-3">
-            <label>Montant demandé</label>
-            <input type="number" step="0.01" name="amountRequested" class="form-control" value="{{ old('amountRequested', $loanrequest->amountRequested) }}" required>
-            @error('amountRequested')<div class="text-danger">{{ $message }}</div>@enderror
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Mettre à jour</button>
+                        <a href="{{ route('loan-requests.show', $loanRequest->id) }}" class="btn btn-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
         </div>
-
-        <div class="mb-3">
-            <label>Objet du prêt</label>
-            <input type="text" name="purpose" class="form-control" value="{{ old('purpose', $loanrequest->purpose) }}" required>
-            @error('purpose')<div class="text-danger">{{ $message }}</div>@enderror
-        </div>
-
-        <button class="btn btn-primary">Enregistrer</button>
-    </form>
+    </div>
 </div>
 @endsection

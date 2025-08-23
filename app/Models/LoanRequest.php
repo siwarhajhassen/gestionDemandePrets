@@ -2,38 +2,31 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class LoanRequest extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'applicant_id',
-        'agent_bna_id',
-        'amountRequested',
+        'agriculteur_id',
+        'amount_requested',
         'purpose',
-        'status',
-        'submissionDate',
-        'lastUpdated',
+        'loan_status',
+        'submission_date',
+        'last_updated'
     ];
 
-    protected $attributes = [
-        'status' => 'en attente',
+    protected $casts = [
+        'submission_date' => 'datetime',
+        'last_updated' => 'datetime',
+        'amount_requested' => 'double'
     ];
 
-    protected $dates = [
-        'submissionDate',
-        'lastUpdated',
-    ];
-
-    // Relations
     public function agriculteur()
     {
-        return $this->belongsTo(Agriculteur::class, 'applicant_id');
-    }
-
-    public function agentBNA()
-    {
-        return $this->belongsTo(AgentBNA::class, 'agent_bna_id');
+        return $this->belongsTo(Agriculteur::class);
     }
 
     public function documents()
@@ -46,15 +39,18 @@ class LoanRequest extends Model
         return $this->hasMany(Note::class);
     }
 
-    public function actionLogs()
+    public function addDocument($doc)
     {
-        return $this->hasMany(ActionLog::class);
+        // Implementation would be in controller
     }
 
-    // Accessor
-    public function getFormattedAmountAttribute()
+    public function removeDocument($documentId)
     {
-        return number_format($this->amountRequested, 0, ',', ' ') . ' DT';
+        // Implementation would be in controller
+    }
+
+    public function setStatus($status, $changedBy, $reason)
+    {
+        // Implementation would be in controller
     }
 }
-

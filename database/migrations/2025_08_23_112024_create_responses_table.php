@@ -8,18 +8,17 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('complaints', function (Blueprint $table) {
+        Schema::create('responses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('agriculteur_id')->constrained()->onDelete('cascade');
-            $table->string('subject');
+            $table->foreignId('complaint_id')->constrained()->onDelete('cascade');
+            $table->foreignId('agent_bna_id')->constrained('agent_bna')->onDelete('cascade');
             $table->text('message');
-            $table->enum('status', ['open', 'in_progress', 'resolved'])->default('open');
             $table->timestamps();
         });
     }
 
     public function down()
     {
-        Schema::dropIfExists('complaints');
+        Schema::dropIfExists('responses');
     }
 };
