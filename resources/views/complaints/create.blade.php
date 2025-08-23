@@ -1,44 +1,42 @@
 @extends('layouts.app')
 
-@section('title', 'Créer une Réclamation')
+@section('title', 'Nouvelle réclamation')
 
 @section('content')
-    <div class="container">
-        <h2>Nouvelle Réclamation</h2>
-
-        <form action="{{ route('complaints.store') }}" method="POST">
-            @csrf
-
-            <div class="mb-3">
-                <label for="author_id">Auteur (Agriculteur)</label>
-                <select name="author_id" class="form-control" required>
-                    @foreach($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->fullName }}</option>
-                    @endforeach
-                </select>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center">Nouvelle réclamation</h3>
             </div>
+            <div class="card-body">
+                <form method="POST" action="{{ route('complaints.store') }}">
+                    @csrf
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Sujet</label>
+                        <input type="text" class="form-control @error('subject') is-invalid @enderror" 
+                               id="subject" name="subject" value="{{ old('subject') }}" required>
+                        @error('subject')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
 
-            <div class="mb-3">
-                <label for="subject">Sujet</label>
-                <input type="text" name="subject" class="form-control" required>
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea class="form-control @error('message') is-invalid @enderror" 
+                                  id="message" name="message" rows="6" required>{{ old('message') }}</textarea>
+                        @error('message')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Envoyer la réclamation</button>
+                        <a href="{{ route('complaints.index') }}" class="btn btn-secondary">Annuler</a>
+                    </div>
+                </form>
             </div>
-
-            <div class="mb-3">
-                <label for="message">Message</label>
-                <textarea name="message" class="form-control" rows="4" required></textarea>
-            </div>
-
-            <div class="mb-3">
-                <label for="status">Statut</label>
-                <select name="status" class="form-control">
-                    <option value="OPEN">OPEN</option>
-                    <option value="RESPONDED">RESPONDED</option>
-                    <option value="CLOSED">CLOSED</option>
-                </select>
-            </div>
-
-            <button type="submit" class="btn btn-success">Envoyer</button>
-        </form>
+        </div>
     </div>
+</div>
 @endsection
-

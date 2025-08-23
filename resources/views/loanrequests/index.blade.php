@@ -1,52 +1,67 @@
 @extends('layouts.app')
 
-@section('title', 'Demandes de prêt')
+@section('title', 'Mes demandes de prêt')
 
 @section('content')
-<h2>Demandes de prêt</h2>
-<a href="{{ route('loanrequests.create') }}" class="btn btn-success mb-3">Nouvelle demande</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Mes demandes de prêt</h1>
+    <a href="{{ route('loan-requests.create') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nouvelle demande
+    </a>
+</div>
 
-@if($loanrequests->count())
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Agriculteur</th>
-                <th>Montant</th>
-                <th>Objet</th>
-                <th>Statut</th>
-                <th>Soumise le</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($loanrequests as $loan)
-                <tr>
-                    <td>{{ $loan->agriculteur->fullName ?? '-' }}</td>
-                    <td>{{ number_format($loan->amountRequested, 2, ',', ' ') }} DZD</td>
-                    <td>{{ $loan->purpose }}</td>
-                    <td>
-                        <span class="badge 
-                            {{ $loan->status == 'validé' ? 'bg-success' : 'bg-secondary' }}">
-                            {{ ucfirst($loan->status) }}
-                        </span>
-                    </td>
-                    <td>{{ \Carbon\Carbon::parse($loan->submissionDate)->format('d/m/Y') }}</td>
-                    <td>
-                        <a href="{{ route('loanrequests.show', $loan->id) }}" class="btn btn-sm btn-outline-success">Voir</a>
-                        <a href="{{ route('loanrequests.edit', $loan->id) }}" class="btn btn-sm btn-outline-primary">Modifier</a>
-
-                        @if($loan->status !== 'validé')
-                        <form action="{{ route('loanrequests.validate', $loan->id) }}" method="POST" style="display:inline;">
-                            @csrf
-                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Valider cette demande ?')">Valider</button>
-                        </form>
-                        @endif
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-@else
-    <p>Aucune demande enregistrée.</p>
-@endif
+<div class="card">
+    <div class="card-body">
+        @if($loanRequests->count() > 0)
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Montant</th>
+                            <th>Objectif</th>
+                            <th>Statut</th>
+                            <th>Date de soumission</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($loanRequests as $request)
+                            <tr>
+                                <td>{{ $request->id }}</td>
+                                <td>{{ number_format($request->amount_requested, 2) }} €</td>
+                                <td>{{ Str::limit($request->purpose, 50) }}</td>
+                                <td>
+                                    <span class="badge bg-{{ $request->loan_status == 'approved' ? 'success' : ($request->loan_status == 'rejected' ? 'danger' : 'warning') }}">
+                                        {{ $request->loan_status }}
+                                    </span>
+                                </td>
+                                <td>{{ $request->submission_date->format('d/m/Y H:i') }}</td>
+                                <td>
+                                    <a href="{{ route('loan-requests.show', $request->id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if($request->loan_status == 'draft')
+                                        <a href="{{ route('loan-requests.edit', $request->id) }}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="{{ route('loan-requests.submit', $request->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-success" 
+                                                    onclick="return confirm('Êtes-vous sûr de vouloir soumettre cette demande ?')">
+                                                <i class="fas fa-paper-plane"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <p class="text-muted">Aucune demande de prêt pour le moment.</p>
+        @endif
+    </div>
+</div>
 @endsection

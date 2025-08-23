@@ -1,40 +1,56 @@
 @extends('layouts.app')
 
+@section('title', 'Détails de la réclamation')
+
 @section('content')
-<div class="container">
-    <h1>Détails de la Réclamation #{{ $complaint->id }}</h1>
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3>Réclamation: {{ $complaint->subject }}</h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Statut:</strong>
+                        <span class="badge bg-{{ $complaint->status == 'resolved' ? 'success' : 'warning' }}">
+                            {{ $complaint->status }}
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Date:</strong>
+                        {{ $complaint->created_at->format('d/m/Y H:i') }}
+                    </div>
+                </div>
 
-    <div class="mb-3">
-        <strong>Auteur :</strong> {{ $complaint->author->fullName ?? 'N/A' }}
+                <div class="mb-3">
+                    <strong>Message:</strong>
+                    <p class="mt-2">{{ $complaint->message }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Responses Section -->
+        @if($complaint->responses->count() > 0)
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4>Réponses</h4>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        @foreach($complaint->responses as $response)
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Réponse de l'agent BNA</h6>
+                                    <small>{{ $response->created_at->format('d/m/Y H:i') }}</small>
+                                </div>
+                                <p class="mb-1">{{ $response->message }}</p>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
-
-    <div class="mb-3">
-        <strong>Sujet :</strong> {{ $complaint->subject }}
-    </div>
-
-    <div class="mb-3">
-        <strong>Message :</strong>
-        <p>{{ $complaint->message }}</p>
-    </div>
-
-    <div class="mb-3">
-        <strong>Statut :</strong> {{ $complaint->status }}
-    </div>
-
-    <div class="mb-3">
-        <strong>Date de création :</strong> {{ $complaint->created_at->format('d/m/Y H:i') }}
-    </div>
-
-    @if($complaint->relatedLoanRequest)
-    <div class="mb-3">
-        <strong>Demande de prêt associée :</strong>
-        <a href="{{ route('loanrequests.show', $complaint->relatedLoanRequest->id) }}">
-            #{{ $complaint->relatedLoanRequest->id }} - {{ $complaint->relatedLoanRequest->purpose }}
-        </a>
-    </div>
-    @endif
-
-    <a href="{{ route('complaints.index') }}" class="btn btn-secondary">Retour à la liste</a>
 </div>
 @endsection
-

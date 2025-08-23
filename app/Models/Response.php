@@ -5,15 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Complaint extends Model
+class Response extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'agriculteur_id',
-        'subject',
+        'complaint_id',
+        'agent_bna_id',
         'message',
-        'status',
         'created_at'
     ];
 
@@ -21,13 +20,13 @@ class Complaint extends Model
         'created_at' => 'datetime'
     ];
 
-    public function agriculteur()
+    public function complaint()
     {
-        return $this->belongsTo(Agriculteur::class);
+        return $this->belongsTo(Complaint::class);
     }
 
-    public function responses()
+    public function agentBNA()
     {
-        return $this->hasMany(Response::class);
+        return $this->belongsTo(AgentBNA::class);
     }
 }
