@@ -30,10 +30,10 @@
                         @endif
                         @if(auth()->user()->agentBNA)
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('agent.loan-requests.index') }}">Gestion des prêts</a>
+                                <a class="nav-link" href="{{ route('loan-requests.index') }}">Gestion des prêts</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('agent.complaints.index') }}">Gestion des réclamations</a>
+                                <a class="nav-link" href="{{ route('complaints.index') }}">Gestion des réclamations</a>
                             </li>
                         @endif
                     @endauth

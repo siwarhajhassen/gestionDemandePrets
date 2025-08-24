@@ -6,6 +6,7 @@ use App\Models\LoanRequest;
 use App\Models\Complaint;
 use App\Models\AgentBNA;
 use App\Models\Note;
+use App\Models\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,127 +20,177 @@ class AgentBNAController extends Controller
 
     public function dashboard()
     {
-        $loanRequests = LoanRequest::with(['agriculteur.user', 'documents'])
-            ->orderBy('submission_date', 'desc')
-            ->paginate(10);
-            
-        $complaints = Complaint::with(['agriculteur.user'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $user = Auth::user();
+        $agencyId = $user->agentBNA->agency_id;
 
-        return view('agent.dashboard', compact('loanRequests', 'complaints'));
+        // Statistiques
+        $stats = [
+            'total_complaints' => Complaint::count(),
+            'open_complaints' => Complaint::where('status', 'open')->count(),
+            'total_loan_requests' => LoanRequest::count(),
+            'pending_loan_requests' => LoanRequest::where('status', 'submitted')->count(),
+        ];
+
+        // Réclamations récentes
+        $recentComplaints = Complaint::with(['agriculteur.user'])
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        // Demandes de prêt récentes
+        $recentLoanRequests = LoanRequest::with(['agriculteur.user'])
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        return view('dashboard.agent', compact('stats', 'recentComplaints', 'recentLoanRequests'));
     }
 
     public function viewAllLoanRequests(Request $request)
     {
-        $status = $request->get('status');
-        $dateFrom = $request->get('date_from');
-        $dateTo = $request->get('date_to');
-
+        $status = $request->get('status', 'all');
+        
         $query = LoanRequest::with(['agriculteur.user', 'documents']);
 
-        if ($status) {
-            $query->where('loan_status', $status);
+        if ($status !== 'all') {
+            $query->where('status', $status);
         }
 
-        if ($dateFrom && $dateTo) {
-            $query->whereBetween('submission_date', [$dateFrom, $dateTo]);
+        $loanRequests = $query->orderBy('submissionDate', 'desc')->paginate(10);
+
+        return view('loanrequests.agent.index', compact('loanRequests', 'status'));
+    }
+
+    public function viewAllComplaints(Request $request)
+    {
+        $status = $request->get('status', 'all');
+        
+        $query = Complaint::with(['agriculteur.user', 'responses']);
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
         }
 
-        $loanRequests = $query->orderBy('submission_date', 'desc')->paginate(10);
+        $complaints = $query->orderBy('created_at', 'desc')->paginate(10);
 
-        return view('agent.loan-requests.index', compact('loanRequests'));
+        return view('complaints.agent.index', compact('complaints', 'status'));
     }
 
-    public function viewAllComplaints()
+    public function showComplaint($id)
     {
-        $complaints = Complaint::with(['agriculteur.user', 'responses'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $complaint = Complaint::with(['agriculteur.user', 'responses.agentBNA.user'])
+            ->findOrFail($id);
 
-        return view('agent.complaints.index', compact('complaints'));
+        return view('complaints.agent.show', compact('complaint'));
     }
 
-    public function respondToComplaint(Request $request, $complaintId)
+    public function respondToComplaint(Request $request, $id)
     {
-        $validated = $request->validate([
-            'message' => 'required|string',
+        $request->validate([
+            'message' => 'required|string|min:10',
         ]);
 
-        $complaint = Complaint::findOrFail($complaintId);
+        $complaint = Complaint::findOrFail($id);
         $user = Auth::user();
 
-        $response = $complaint->responses()->create([
+        // Créer la réponse
+        $response = Response::create([
+            'complaint_id' => $id,
             'agent_bna_id' => $user->agentBNA->id,
-            'message' => $validated['message'],
-            'created_at' => now(),
+            'message' => $request->message,
         ]);
 
-        return redirect()->route('agent.complaints.show', $complaintId)
-            ->with('success', 'Response sent successfully!');
+        // Mettre à jour le statut de la réclamation
+        $complaint->update([
+            'status' => 'in_progress'
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Réponse envoyée avec succès!');
     }
 
-    public function requestMissingDocuments(Request $request, $loanRequestId)
+    public function closeComplaint($id)
     {
-        $validated = $request->validate([
-            'requested_documents' => 'required|array',
-            'requested_documents.*' => 'string',
-        ]);
+        $complaint = Complaint::findOrFail($id);
+        $complaint->update(['status' => 'resolved']);
 
-        // Implementation for requesting missing documents
-        // This could involve sending notifications, updating status, etc.
-
-        return redirect()->route('agent.loan-requests.show', $loanRequestId)
-            ->with('success', 'Documents requested successfully!');
+        return redirect()->back()
+            ->with('success', 'Réclamation marquée comme résolue!');
     }
 
     public function openLoanRequest($id)
     {
-        $loanRequest = LoanRequest::with(['agriculteur.user', 'documents', 'notes'])
-            ->findOrFail($id);
+        $loanRequest = LoanRequest::with([
+            'agriculteur.user', 
+            'documents', 
+            'notes'
+        ])->findOrFail($id);
 
-        return view('agent.loan-requests.show', compact('loanRequest'));
+        return view('loanrequests.agent.show', compact('loanRequest'));
     }
 
-    public function addNoteToFile(Request $request, $loanRequestId)
+    public function changeLoanStatus(Request $request, $id)
     {
-        $validated = $request->validate([
-            'content' => 'required|string',
+        $request->validate([
+            'status' => 'required|in:submitted,pending,approved,rejected,under_review',
+            'comment' => 'required|string|min:10',
         ]);
 
-        $note = Note::create([
-            'loan_request_id' => $loanRequestId,
-            'content' => $validated['content'],
-            'created_at' => now(),
-        ]);
+        $loanRequest = LoanRequest::findOrFail($id);
 
-        return redirect()->route('agent.loan-requests.show', $loanRequestId)
-            ->with('success', 'Note added successfully!');
-    }
-
-    public function changeLoanStatus(Request $request, $loanRequestId)
-    {
-        $validated = $request->validate([
-            'new_status' => 'required|in:pending,approved,rejected,under_review',
-            'comment' => 'required|string',
-        ]);
-
-        $loanRequest = LoanRequest::findOrFail($loanRequestId);
-        $user = Auth::user();
-        
         $loanRequest->update([
-            'loan_status' => $validated['new_status'],
-            'last_updated' => now(),
+            'status' => $request->status,
+            'lastUpdated' => now(),
         ]);
 
-        // Add a note about the status change
-        Note::create([
-            'loan_request_id' => $loanRequestId,
-            'content' => "Status changed to {$validated['new_status']}: {$validated['comment']}",
-            'created_at' => now(),
+        // Ajouter une note
+        $loanRequest->notes()->create([
+            'content' => "Statut changé à {$request->status}: {$request->comment}",
         ]);
 
-        return redirect()->route('agent.loan-requests.show', $loanRequestId)
-            ->with('success', 'Loan status updated successfully!');
+        return redirect()->back()
+            ->with('success', 'Statut de la demande mis à jour avec succès!');
+    }
+
+    public function requestMissingDocuments(Request $request, $id)
+    {
+        $request->validate([
+            'message' => 'required|string|min:10',
+            'requested_documents' => 'required|array',
+            'requested_documents.*' => 'string',
+        ]);
+
+        $loanRequest = LoanRequest::findOrFail($id);
+
+        // Ajouter une note pour demander des documents
+        $documentsList = implode(', ', $request->requested_documents);
+        $loanRequest->notes()->create([
+            'content' => "Documents demandés: {$documentsList}. Message: {$request->message}",
+        ]);
+
+        // Changer le statut
+        $loanRequest->update([
+            'status' => 'under_review',
+            'lastUpdated' => now(),
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Demande de documents envoyée avec succès!');
+    }
+
+    public function addNoteToFile(Request $request, $id)
+    {
+        $request->validate([
+            'content' => 'required|string|min:10',
+        ]);
+
+        $loanRequest = LoanRequest::findOrFail($id);
+
+        $note = $loanRequest->notes()->create([
+            'content' => $request->content,
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Note ajoutée avec succès!');
     }
 }

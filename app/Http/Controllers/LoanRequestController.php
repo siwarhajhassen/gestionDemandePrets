@@ -175,14 +175,19 @@ class LoanRequestController extends Controller
             ->with('success', 'Document uploaded successfully!');
     }
 
-    public function downloadDocument($documentId)
+    public function downloadDocument(Document $document)
     {
-        $document = Document::findOrFail($documentId);
         $user = Auth::user();
-        
-        // Check authorization
-        if ($user->agriculteur && $document->loanRequest->agriculteur_id !== $user->agriculteur->id) {
-            abort(403, 'Unauthorized');
+
+        // Check if user is an agent (has AgentBNA relationship)
+        if (!$user->agentBNA) {
+            abort(403, 'Unauthorized access. Agent privileges required.');
+        }
+
+        // Optional: Check if the agent is assigned to this loan request
+        // Assuming the loan request has an agent_id field
+        if ($document->loanRequest->agent_id !== $user->agentBNA->id) {
+            abort(403, 'Unauthorized access to this document.');
         }
 
         // Check if file exists

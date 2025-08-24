@@ -5,25 +5,15 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Symfony\Component\HttpFoundation\Response;
 
 class AgentBNA
 {
-    /**
-     * Handle an incoming request.
-     */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next)
     {
-        // Check if user is authenticated
-        if (!Auth::check()) {
-            return redirect()->route('login');
+        if (Auth::check() && Auth::user()->agentBNA) {
+            return $next($request);
         }
 
-        // Check if user is an agent BNA
-        if (!Auth::user()->agentBNA) {
-            return redirect()->route('dashboard')->with('error', 'Unauthorized. Agent BNA access required.');
-        }
-
-        return $next($request);
+        return redirect()->route('dashboard')->with('error', 'Accès réservé aux agents BNA.');
     }
 }
