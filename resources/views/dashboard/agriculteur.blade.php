@@ -28,8 +28,8 @@
                                         {{ $request->loan_status }}
                                     </span>
                                 </div>
-                                <p class="mb-1">Montant: {{ number_format($request->amount_requested, 2) }} €</p>
-                                <small>Date: {{ $request->submission_date->format('d/m/Y') }}</small>
+                                <p class="mb-1">Montant: {{ number_format($request->amountRequested, 2) }} €</p>
+                                <small>Date: {{ $request->submissionDate->format('d/m/Y') }}</small>
                             </a>
                         @endforeach
                     </div>
