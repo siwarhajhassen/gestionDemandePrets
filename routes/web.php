@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LoanRequestController;
 use App\Http\Controllers\AgentBNAController;
 use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\AgriculteurController;
 
 // Public routes
 Route::get('/', function () {
@@ -16,23 +17,29 @@ Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('regi
 Route::post('/register', [AuthController::class, 'register']);
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
+
 // Simple test route without middleware
 Route::get('/test', function () {
     return 'Test page - no auth required';
 });
+
 // Protected routes
 Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Loan request routes
     Route::resource('loan-requests', LoanRequestController::class);
     Route::post('loan-requests/{id}/submit', [LoanRequestController::class, 'submit'])->name('loan-requests.submit');
     Route::post('loan-requests/{loanRequestId}/documents', [LoanRequestController::class, 'addDocument'])->name('loan-requests.add-document');
-    
+
     // Complaint routes
     Route::resource('complaints', ComplaintController::class);
-    
+
+    // Agriculteur routes (tes ajouts)
+    Route::get('/agriculteurs/demande', [AgriculteurController::class, 'create'])->name('agriculteurs.create');
+    Route::post('/agriculteurs/demande', [AgriculteurController::class, 'store'])->name('agriculteurs.store');
+
     // Agent BNA routes
     Route::middleware(['agent.bna'])->prefix('agent')->name('agent.')->group(function () {
         Route::get('/dashboard', [AgentBNAController::class, 'dashboard'])->name('dashboard');
@@ -41,7 +48,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/loan-requests/{loanRequestId}/notes', [AgentBNAController::class, 'addNoteToFile'])->name('loan-requests.add-note');
         Route::post('/loan-requests/{loanRequestId}/change-status', [AgentBNAController::class, 'changeLoanStatus'])->name('loan-requests.change-status');
         Route::post('/loan-requests/{loanRequestId}/request-documents', [AgentBNAController::class, 'requestMissingDocuments'])->name('loan-requests.request-documents');
-        
+
         Route::get('/complaints', [AgentBNAController::class, 'viewAllComplaints'])->name('complaints.index');
         Route::get('/complaints/{id}', function ($id) {
             $complaint = \App\Models\Complaint::with(['agriculteur.user', 'responses'])->findOrFail($id);
