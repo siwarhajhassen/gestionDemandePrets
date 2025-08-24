@@ -29,19 +29,25 @@
                         @foreach($loanRequests as $request)
                             <tr>
                                 <td>{{ $request->id }}</td>
-                                <td>{{ number_format($request->amount_requested, 2) }} €</td>
+                                <td>{{ number_format($request->amountRequested, 2) }} €</td>
                                 <td>{{ Str::limit($request->purpose, 50) }}</td>
                                 <td>
-                                    <span class="badge bg-{{ $request->loan_status == 'approved' ? 'success' : ($request->loan_status == 'rejected' ? 'danger' : 'warning') }}">
-                                        {{ $request->loan_status }}
+                                    <span class="badge bg-{{ $request->status == 'approved' ? 'success' : ($request->status == 'rejected' ? 'danger' : 'warning') }}">
+                                        {{ $request->status }}
                                     </span>
                                 </td>
-                                <td>{{ $request->submission_date->format('d/m/Y H:i') }}</td>
+                                <td>
+                                    @if($request->submissionDate)
+                                        {{ $request->submissionDate->format('d/m/Y H:i') }}
+                                    @else
+                                        Non soumis
+                                    @endif
+                                </td>
                                 <td>
                                     <a href="{{ route('loan-requests.show', $request->id) }}" class="btn btn-sm btn-info">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    @if($request->loan_status == 'draft')
+                                    @if($request->status == 'draft')
                                         <a href="{{ route('loan-requests.edit', $request->id) }}" class="btn btn-sm btn-warning">
                                             <i class="fas fa-edit"></i>
                                         </a>
