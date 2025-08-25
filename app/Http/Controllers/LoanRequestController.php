@@ -178,23 +178,25 @@ class LoanRequestController extends Controller
     public function downloadDocument(Document $document)
     {
         $user = Auth::user();
-
-        // Check if user is an agent (has AgentBNA relationship)
+        
+        // Check if user is an agent
         if (!$user->agentBNA) {
             abort(403, 'Unauthorized access. Agent privileges required.');
         }
-
-        // Optional: Check if the agent is assigned to this loan request
-        // Assuming the loan request has an agent_id field
-        if ($document->loanRequest->agent_id !== $user->agentBNA->id) {
+        
+        // Get the agent's agence
+        $agentAgence = $user->agentBNA->agence;
+        
+        // Check if the document's loan request belongs to the same agence
+        if ($document->loanRequest->agence_id !== $agentAgence->id) {
             abort(403, 'Unauthorized access to this document.');
         }
-
+        
         // Check if file exists
         if (!Storage::exists($document->storage_path)) {
             abort(404, 'File not found');
         }
-
+        
         return Storage::download($document->storage_path, $document->file_name);
     }
 

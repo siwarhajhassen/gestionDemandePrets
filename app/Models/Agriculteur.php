@@ -11,6 +11,7 @@ class Agriculteur extends Model
 
     protected $fillable = [
         'user_id',
+        'agence_id', // Add this
         'CIN',
         'farm_address',
         'farm_type'
@@ -19,6 +20,11 @@ class Agriculteur extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function agence()
+    {
+        return $this->belongsTo(Agence::class);
     }
 
     public function loanRequests()
@@ -31,39 +37,5 @@ class Agriculteur extends Model
         return $this->hasMany(Complaint::class);
     }
 
-    // Methods that would be implemented in a controller
-    public function createLoanRequest($dto)
-    {
-        // Implementation would be in controller
-    }
-
-    public function updateDocument($loanRequestId, $file, $type)
-    {
-        // Implementation would be in controller
-    }
-
-    public function submitLoanRequest($loanRequestId)
-    {
-        // Implementation would be in controller
-    }
-
-    public function viewLoanRequests()
-    {
-        return $this->loanRequests()->get();
-    }
-
-    public function sendComplaint($dto)
-    {
-        // Implementation would be in controller
-    }
-
-    public function viewResponse()
-    {
-        // Implementation would be in controller
-    }
-
-    public function updateLoanRequest($id, $dto)
-    {
-        // Implementation would be in controller
-    }
+    // Remove controller methods from model
 }

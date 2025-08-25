@@ -4,7 +4,12 @@
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Gestion des Demandes de Prêt</h1>
+    <div>
+        <h1>Gestion des Demandes de Prêt</h1>
+        @isset($agence)
+            <p class="text-muted">Agence: <strong>{{ $agence->name }}</strong> ({{ $agence->code }})</p>
+        @endisset
+    </div>
     <div>
         <a href="{{ route('agent.dashboard') }}" class="btn btn-outline-primary">
             <i class="fas fa-arrow-left"></i> Retour au dashboard

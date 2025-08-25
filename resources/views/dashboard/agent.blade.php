@@ -7,6 +7,11 @@
     <div class="col-12">
         <h1>Dashboard Agent BNA</h1>
         <p class="text-muted">Bienvenue, {{ auth()->user()->prenom }} {{ auth()->user()->nom }}</p>
+        @isset($agence)
+            <div class="alert alert-info">
+                <i class="fas fa-building"></i> Agence: <strong>{{ $agence->name }}</strong> ({{ $agence->code }})
+            </div>
+        @endisset
     </div>
 </div>
 

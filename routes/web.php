@@ -9,7 +9,7 @@ use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\AgriculteurController;
 
 
-
+Route::permanentRedirect('/', '/login');
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');

@@ -11,8 +11,10 @@ class LoanRequest extends Model
 {
     use HasFactory, SoftDeletes;
 
+    // AJOUTER agence_id dans les fillable
     protected $fillable = [
         'agriculteur_id',
+        'agence_id', // ← AJOUTER CETTE LIGNE
         'amountRequested',
         'purpose',
         'loan_duration',
@@ -39,29 +41,7 @@ class LoanRequest extends Model
         'deleted_at' => 'datetime',
     ];
 
-    // Accesseur pour submissionDate
-    public function getSubmissionDateAttribute($value)
-    {
-        return $value ? Carbon::parse($value) : null;
-    }
-
-    // Accesseur pour lastUpdated
-    public function getLastUpdatedAttribute($value)
-    {
-        return $value ? Carbon::parse($value) : null;
-    }
-
-    // Accesseur pour expected_start_date
-    public function getExpectedStartDateAttribute($value)
-    {
-        return $value ? Carbon::parse($value) : null;
-    }
-
-    // Accesseur pour expected_completion_date
-    public function getExpectedCompletionDateAttribute($value)
-    {
-        return $value ? Carbon::parse($value) : null;
-    }
+    // Accesseurs (corrects)
 
     public function agriculteur()
     {
@@ -76,5 +56,11 @@ class LoanRequest extends Model
     public function notes()
     {
         return $this->hasMany(Note::class);
+    }
+
+    // AJOUTER CETTE RELATION
+    public function agence()
+    {
+        return $this->belongsTo(Agence::class);
     }
 }

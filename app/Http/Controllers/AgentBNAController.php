@@ -7,6 +7,7 @@ use App\Models\Complaint;
 use App\Models\AgentBNA;
 use App\Models\Note;
 use App\Models\Response;
+use App\Models\Agence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,36 +22,65 @@ class AgentBNAController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        $agencyId = $user->agentBNA->agency_id;
+        $agent = $user->agentBNA;
+        
+        // Vérifier que l'agent a une agence
+        if (!$agent->agence) {
+            abort(403, 'Agent non assigné à une agence.');
+        }
+        
+        $agence = $agent->agence;
 
-        // Statistiques
+        // Statistiques filtrées par agence
         $stats = [
-            'total_complaints' => Complaint::count(),
-            'open_complaints' => Complaint::where('status', 'open')->count(),
-            'total_loan_requests' => LoanRequest::count(),
-            'pending_loan_requests' => LoanRequest::where('status', 'submitted')->count(),
+            'total_complaints' => Complaint::whereHas('agriculteur', function($query) use ($agence) {
+                $query->where('agence_id', $agence->id);
+            })->count(),
+            
+            'open_complaints' => Complaint::where('status', 'open')
+                ->whereHas('agriculteur', function($query) use ($agence) {
+                    $query->where('agence_id', $agence->id);
+                })->count(),
+                
+            'total_loan_requests' => LoanRequest::where('agence_id', $agence->id)->count(),
+            
+            'pending_loan_requests' => LoanRequest::where('status', 'submitted')
+                ->where('agence_id', $agence->id)->count(),
         ];
 
-        // Réclamations récentes
+        // Réclamations récentes de l'agence
         $recentComplaints = Complaint::with(['agriculteur.user'])
+            ->whereHas('agriculteur', function($query) use ($agence) {
+                $query->where('agence_id', $agence->id);
+            })
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
 
-        // Demandes de prêt récentes
+        // Demandes de prêt récentes de l'agence
         $recentLoanRequests = LoanRequest::with(['agriculteur.user'])
+            ->where('agence_id', $agence->id)
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
 
-        return view('dashboard.agent', compact('stats', 'recentComplaints', 'recentLoanRequests'));
+        return view('dashboard.agent', compact('stats', 'recentComplaints', 'recentLoanRequests', 'agence'));
     }
 
     public function viewAllLoanRequests(Request $request)
     {
+        $user = Auth::user();
+        $agent = $user->agentBNA;
+        
+        if (!$agent->agence) {
+            abort(403, 'Agent non assigné à une agence.');
+        }
+        
+        $agence = $agent->agence;
         $status = $request->get('status', 'all');
         
-        $query = LoanRequest::with(['agriculteur.user', 'documents']);
+        $query = LoanRequest::with(['agriculteur.user', 'documents'])
+            ->where('agence_id', $agence->id);
 
         if ($status !== 'all') {
             $query->where('status', $status);
@@ -58,14 +88,25 @@ class AgentBNAController extends Controller
 
         $loanRequests = $query->orderBy('submissionDate', 'desc')->paginate(10);
 
-        return view('loanrequests.agent.index', compact('loanRequests', 'status'));
+        return view('loanrequests.agent.index', compact('loanRequests', 'status', 'agence'));
     }
 
     public function viewAllComplaints(Request $request)
     {
+        $user = Auth::user();
+        $agent = $user->agentBNA;
+        
+        if (!$agent->agence) {
+            abort(403, 'Agent non assigné à une agence.');
+        }
+        
+        $agence = $agent->agence;
         $status = $request->get('status', 'all');
         
-        $query = Complaint::with(['agriculteur.user', 'responses']);
+        $query = Complaint::with(['agriculteur.user', 'responses'])
+            ->whereHas('agriculteur', function($query) use ($agence) {
+                $query->where('agence_id', $agence->id);
+            });
 
         if ($status !== 'all') {
             $query->where('status', $status);
@@ -73,30 +114,53 @@ class AgentBNAController extends Controller
 
         $complaints = $query->orderBy('created_at', 'desc')->paginate(10);
 
-        return view('complaints.agent.index', compact('complaints', 'status'));
+        return view('complaints.agent.index', compact('complaints', 'status', 'agence'));
     }
 
     public function showComplaint($id)
     {
+        $user = Auth::user();
+        $agent = $user->agentBNA;
+        
+        if (!$agent->agence) {
+            abort(403, 'Agent non assigné à une agence.');
+        }
+        
         $complaint = Complaint::with(['agriculteur.user', 'responses.agentBNA.user'])
             ->findOrFail($id);
+            
+        // Vérifier que la réclamation appartient à l'agence de l'agent
+        if ($complaint->agriculteur->agence_id !== $agent->agence_id) {
+            abort(403, 'Accès non autorisé à cette réclamation.');
+        }
 
         return view('complaints.agent.show', compact('complaint'));
     }
 
     public function respondToComplaint(Request $request, $id)
     {
+        $user = Auth::user();
+        $agent = $user->agentBNA;
+        
+        if (!$agent->agence) {
+            abort(403, 'Agent non assigné à une agence.');
+        }
+        
         $request->validate([
             'message' => 'required|string|min:10',
         ]);
 
         $complaint = Complaint::findOrFail($id);
-        $user = Auth::user();
+        
+        // Vérifier que la réclamation appartient à l'agence de l'agent
+        if ($complaint->agriculteur->agence_id !== $agent->agence_id) {
+            abort(403, 'Accès non autorisé à cette réclamation.');
+        }
 
         // Créer la réponse
         $response = Response::create([
             'complaint_id' => $id,
-            'agent_bna_id' => $user->agentBNA->id,
+            'agent_bna_id' => $agent->id,
             'message' => $request->message,
         ]);
 
@@ -111,7 +175,20 @@ class AgentBNAController extends Controller
 
     public function closeComplaint($id)
     {
+        $user = Auth::user();
+        $agent = $user->agentBNA;
+        
+        if (!$agent->agence) {
+            abort(403, 'Agent non assigné à une agence.');
+        }
+        
         $complaint = Complaint::findOrFail($id);
+        
+        // Vérifier que la réclamation appartient à l'agence de l'agent
+        if ($complaint->agriculteur->agence_id !== $agent->agence_id) {
+            abort(403, 'Accès non autorisé à cette réclamation.');
+        }
+        
         $complaint->update(['status' => 'resolved']);
 
         return redirect()->back()
@@ -120,23 +197,47 @@ class AgentBNAController extends Controller
 
     public function openLoanRequest($id)
     {
+        $user = Auth::user();
+        $agent = $user->agentBNA;
+        
+        if (!$agent->agence) {
+            abort(403, 'Agent non assigné à une agence.');
+        }
+        
         $loanRequest = LoanRequest::with([
             'agriculteur.user', 
             'documents', 
             'notes'
         ])->findOrFail($id);
+        
+        // Vérifier que la demande appartient à l'agence de l'agent
+        if ($loanRequest->agence_id !== $agent->agence_id) {
+            abort(403, 'Accès non autorisé à cette demande de prêt.');
+        }
 
         return view('loanrequests.agent.show', compact('loanRequest'));
     }
 
     public function changeLoanStatus(Request $request, $id)
     {
+        $user = Auth::user();
+        $agent = $user->agentBNA;
+        
+        if (!$agent->agence) {
+            abort(403, 'Agent non assigné à une agence.');
+        }
+        
         $request->validate([
             'status' => 'required|in:submitted,pending,approved,rejected,under_review',
             'comment' => 'required|string|min:10',
         ]);
 
         $loanRequest = LoanRequest::findOrFail($id);
+        
+        // Vérifier que la demande appartient à l'agence de l'agent
+        if ($loanRequest->agence_id !== $agent->agence_id) {
+            abort(403, 'Accès non autorisé à cette demande de prêt.');
+        }
 
         $loanRequest->update([
             'status' => $request->status,
@@ -154,6 +255,13 @@ class AgentBNAController extends Controller
 
     public function requestMissingDocuments(Request $request, $id)
     {
+        $user = Auth::user();
+        $agent = $user->agentBNA;
+        
+        if (!$agent->agence) {
+            abort(403, 'Agent non assigné à une agence.');
+        }
+        
         $request->validate([
             'message' => 'required|string|min:10',
             'requested_documents' => 'required|array',
@@ -161,6 +269,11 @@ class AgentBNAController extends Controller
         ]);
 
         $loanRequest = LoanRequest::findOrFail($id);
+        
+        // Vérifier que la demande appartient à l'agence de l'agent
+        if ($loanRequest->agence_id !== $agent->agence_id) {
+            abort(403, 'Accès non autorisé à cette demande de prêt.');
+        }
 
         // Ajouter une note pour demander des documents
         $documentsList = implode(', ', $request->requested_documents);
@@ -180,11 +293,23 @@ class AgentBNAController extends Controller
 
     public function addNoteToFile(Request $request, $id)
     {
+        $user = Auth::user();
+        $agent = $user->agentBNA;
+        
+        if (!$agent->agence) {
+            abort(403, 'Agent non assigné à une agence.');
+        }
+        
         $request->validate([
             'content' => 'required|string|min:10',
         ]);
 
         $loanRequest = LoanRequest::findOrFail($id);
+        
+        // Vérifier que la demande appartient à l'agence de l'agent
+        if ($loanRequest->agence_id !== $agent->agence_id) {
+            abort(403, 'Accès non autorisé à cette demande de prêt.');
+        }
 
         $note = $loanRequest->notes()->create([
             'content' => $request->content,

@@ -30,4 +30,10 @@ class Complaint extends Model
     {
         return $this->hasMany(Response::class);
     }
+
+    // AJOUTER CETTE MÉTHODE pour accéder à l'agence via l'agriculteur
+    public function agence()
+    {
+        return $this->through('agriculteur')->has('agence');
+    }
 }
