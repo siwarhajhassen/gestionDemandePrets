@@ -1,17 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Inscription')
+@section('title', 'Inscription Agriculteur')
 
 @section('content')
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h3 class="text-center">Inscription</h3>
+                <h3 class="text-center">Inscription Agriculteur</h3>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ route('register') }}">
                     @csrf
+                    
+                    <!-- Champ caché pour le type d'utilisateur -->
+                    <input type="hidden" name="user_type" value="agriculteur">
+                    
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -77,25 +81,29 @@
                                name="password_confirmation" required>
                     </div>
 
+                    <!-- Choix de l'agence -->
                     <div class="mb-3">
-                        <label for="user_type" class="form-label">Type d'utilisateur</label>
-                        <select class="form-select @error('user_type') is-invalid @enderror" 
-                                id="user_type" name="user_type" required>
-                            <option value="">Sélectionner un type</option>
-                            <option value="agriculteur" {{ old('user_type') == 'agriculteur' ? 'selected' : '' }}>Agriculteur</option>
-                            <option value="agent_bna" {{ old('user_type') == 'agent_bna' ? 'selected' : '' }}>Agent BNA</option>
+                        <label for="agence_id" class="form-label">Agence</label>
+                        <select class="form-select @error('agence_id') is-invalid @enderror" 
+                                id="agence_id" name="agence_id" required>
+                            <option value="">Sélectionner une agence</option>
+                            @foreach($agences as $agence)
+                                <option value="{{ $agence->id }}" {{ old('agence_id') == $agence->id ? 'selected' : '' }}>
+                                    {{ $agence->name }} ({{ $agence->code }})
+                                </option>
+                            @endforeach
                         </select>
-                        @error('user_type')
+                        @error('agence_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
-                    <!-- Agriculteur Fields -->
-                    <div id="agriculteur_fields" style="display: none;">
+                    <!-- Champs spécifiques agriculteur -->
+                    <div id="agriculteur_fields">
                         <div class="mb-3">
                             <label for="cin" class="form-label">CIN</label>
                             <input type="text" class="form-control @error('cin') is-invalid @enderror" 
-                                   id="cin" name="cin" value="{{ old('cin') }}">
+                                   id="cin" name="cin" value="{{ old('cin') }}" required>
                             @error('cin')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -103,36 +111,24 @@
                         <div class="mb-3">
                             <label for="farm_address" class="form-label">Adresse de la ferme</label>
                             <textarea class="form-control @error('farm_address') is-invalid @enderror" 
-                                      id="farm_address" name="farm_address">{{ old('farm_address') }}</textarea>
+                                      id="farm_address" name="farm_address" required>{{ old('farm_address') }}</textarea>
                             @error('farm_address')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="mb-3">
                             <label for="farm_type" class="form-label">Type de ferme</label>
-                            <input type="text" class="form-control @error('farm_type') is-invalid @enderror" 
-                                   id="farm_type" name="farm_type" value="{{ old('farm_type') }}">
+                            <select class="form-select @error('farm_type') is-invalid @enderror" 
+                                    id="farm_type" name="farm_type" required>
+                                <option value="">Sélectionner le type de ferme</option>
+                                <option value="Élevage" {{ old('farm_type') == 'Élevage' ? 'selected' : '' }}>Élevage</option>
+                                <option value="Céréales" {{ old('farm_type') == 'Céréales' ? 'selected' : '' }}>Céréales</option>
+                                <option value="Maréchage" {{ old('farm_type') == 'Maréchage' ? 'selected' : '' }}>Maréchage</option>
+                                <option value="Arboriculture" {{ old('farm_type') == 'Arboriculture' ? 'selected' : '' }}>Arboriculture</option>
+                                <option value="Viticulture" {{ old('farm_type') == 'Viticulture' ? 'selected' : '' }}>Viticulture</option>
+                                <option value="Autre" {{ old('farm_type') == 'Autre' ? 'selected' : '' }}>Autre</option>
+                            </select>
                             @error('farm_type')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <!-- Agent BNA Fields -->
-                    <div id="agent_bna_fields" style="display: none;">
-                        <div class="mb-3">
-                            <label for="employee_id" class="form-label">ID Employé</label>
-                            <input type="text" class="form-control @error('employee_id') is-invalid @enderror" 
-                                   id="employee_id" name="employee_id" value="{{ old('employee_id') }}">
-                            @error('employee_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="mb-3">
-                            <label for="agency_id" class="form-label">ID Agence</label>
-                            <input type="text" class="form-control @error('agency_id') is-invalid @enderror" 
-                                   id="agency_id" name="agency_id" value="{{ old('agency_id') }}">
-                            @error('agency_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -143,26 +139,25 @@
                 <div class="text-center mt-3">
                     <p>Déjà un compte ? <a href="{{ route('login') }}">Se connecter</a></p>
                 </div>
+                
+                <!-- Information sur le processus de validation -->
+                <div class="alert alert-info mt-3">
+                    <h6><i class="fas fa-info-circle"></i> Processus d'inscription</h6>
+                    <p class="mb-0 small">
+                        Votre inscription sera soumise à une validation administrative. 
+                        Vous recevrez une notification une fois votre compte approuvé.
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    document.getElementById('user_type').addEventListener('change', function() {
-        const agriculteurFields = document.getElementById('agriculteur_fields');
-        const agentBnaFields = document.getElementById('agent_bna_fields');
-        
-        agriculteurFields.style.display = this.value === 'agriculteur' ? 'block' : 'none';
-        agentBnaFields.style.display = this.value === 'agent_bna' ? 'block' : 'none';
-    });
-
-    // Show fields if there are old values
+    // Le script n'est plus nécessaire car on n'a qu'un seul type d'utilisateur
     document.addEventListener('DOMContentLoaded', function() {
-        const userType = document.getElementById('user_type').value;
-        if (userType) {
-            document.getElementById('user_type').dispatchEvent(new Event('change'));
-        }
+        // Afficher les champs agriculteur par défaut
+        document.getElementById('agriculteur_fields').style.display = 'block';
     });
 </script>
 @endsection

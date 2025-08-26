@@ -54,4 +54,39 @@ Route::middleware(['auth'])->group(function () {
     }); 
     
 });
+
+
+// Routes agriculteur en attente
+Route::middleware(['auth', 'agriculteur'])->group(function () {
+    Route::get('/account/pending', function () {
+        return view('auth.pending-approval');
+    })->name('account.pending');
+    
+    Route::get('/account/rejected', function () {
+        $reason = auth()->user()->agriculteur->rejection_reason;
+        return view('auth.rejected', compact('reason'));
+    })->name('account.rejected');
+});
+
+// Routes administrateur
+Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    
+    // Gestion des agriculteurs
+    Route::get('/agriculteurs/pending', [AdminController::class, 'pendingAgriculteurs'])->name('admin.agriculteurs.pending');
+    Route::post('/agriculteurs/{id}/approve', [AdminController::class, 'approveAgriculteur'])->name('admin.agriculteurs.approve');
+    Route::post('/agriculteurs/{id}/reject', [AdminController::class, 'rejectAgriculteur'])->name('admin.agriculteurs.reject');
+    
+    // Gestion des agents
+    Route::get('/agents', [AdminController::class, 'agentsIndex'])->name('admin.agents.index');
+    Route::get('/agents/create', [AdminController::class, 'createAgent'])->name('admin.agents.create');
+    Route::post('/agents', [AdminController::class, 'storeAgent'])->name('admin.agents.store');
+    Route::delete('/agents/{id}', [AdminController::class, 'destroyAgent'])->name('admin.agents.destroy');
+    
+    // Gestion des agences
+    Route::get('/agences', [AdminController::class, 'agencesIndex'])->name('admin.agences.index');
+    Route::get('/agences/create', [AdminController::class, 'createAgence'])->name('admin.agences.create');
+    Route::post('/agences', [AdminController::class, 'storeAgence'])->name('admin.agences.store');
+    Route::delete('/agences/{id}', [AdminController::class, 'destroyAgence'])->name('admin.agences.destroy');
+});
     

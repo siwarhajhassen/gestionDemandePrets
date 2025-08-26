@@ -11,10 +11,15 @@ class Agriculteur extends Model
 
     protected $fillable = [
         'user_id',
-        'agence_id', // Add this
+        'agence_id', 
         'CIN',
         'farm_address',
-        'farm_type'
+        'farm_type',
+        'status' 
+    ];
+
+      protected $casts = [
+        'status' => 'string'
     ];
 
     public function user()
@@ -37,5 +42,18 @@ class Agriculteur extends Model
         return $this->hasMany(Complaint::class);
     }
 
-    // Remove controller methods from model
+     public function isApproved()
+    {
+        return $this->status === 'approved';
+    }
+
+    public function isPending()
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isRejected()
+    {
+        return $this->status === 'rejected';
+    }
 }

@@ -65,6 +65,8 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'agent.bna' => \App\Http\Middleware\AgentBNA::class, // Add it here instead
+        'agent.bna' => \App\Http\Middleware\AgentBNA::class,
+        'admin' => \App\Http\Middleware\AdminMiddleware::class,
+    'approved.agriculteur' => \App\Http\Middleware\ApprovedAgriculteurMiddleware::class,
     ];
 }

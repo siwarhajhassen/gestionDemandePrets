@@ -35,6 +35,11 @@ class User extends Authenticatable
         return $this->hasOne(Agriculteur::class);
     }
 
+    public function admin()
+    {
+        return $this->hasOne(Admin::class);
+    }
+
     public function agentBNA()
     {
         return $this->hasOne(AgentBNA::class);
@@ -48,5 +53,19 @@ class User extends Authenticatable
     public function complaints()
     {
         return $this->hasMany(Complaint::class);
+    }
+    public function isAgriculteur()
+    {
+        return $this->agriculteur !== null;
+    }
+
+    public function isAgent()
+    {
+        return $this->agentBNA !== null;
+    }
+
+    public function isAdmin()
+    {
+        return $this->admin !== null;
     }
 }
