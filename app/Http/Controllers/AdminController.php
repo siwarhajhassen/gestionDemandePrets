@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Agence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Models\LoanRequest;
 
 class AdminController extends Controller
 {
@@ -20,11 +21,13 @@ class AdminController extends Controller
 
         $totalAgents = AgentBNA::count();
         $totalAgences = Agence::count();
+        $totalLoanRequests = \App\Models\LoanRequest::count();
 
-        return view('admin.dashboard', compact(
+        return view('dashboard.admin', compact(
             'pendingAgriculteurs',
             'totalAgents',
-            'totalAgences'
+            'totalAgences',
+        'totalLoanRequests'
         ));
     }
 
@@ -78,6 +81,8 @@ class AdminController extends Controller
             'prenom' => 'required|string|max:255',
             'nom' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
+            'num_tel' => 'required|string|max:20|unique:users,num_tel', // ← Validation pour num_tel
+            'username' => 'required|string|max:255|unique:users,username', // ← Validation pour username
             'employee_id' => 'required|string|max:255|unique:agent_bna,employee_id',
             'agence_id' => 'required|exists:agences,id',
             'password' => 'required|string|min:8|confirmed',
@@ -87,8 +92,9 @@ class AdminController extends Controller
             'prenom' => $request->prenom,
             'nom' => $request->nom,
             'email' => $request->email,
+            'num_tel' => $request->num_tel, // ← Ajout de num_tel
+            'username' => $request->username, // ← Ajout de username (au lieu de l'email)
             'password' => Hash::make($request->password),
-            'username' => $request->email, // Utiliser l'email comme username
         ]);
 
         AgentBNA::create([

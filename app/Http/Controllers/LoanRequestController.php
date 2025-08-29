@@ -34,7 +34,7 @@ class LoanRequestController extends Controller
         return view('loanrequests.create');
     }
 
-    public function store(Request $request)
+   public function store(Request $request)
     {
         $user = Auth::user();
         
@@ -64,13 +64,22 @@ class LoanRequestController extends Controller
         ]);
 
         try {
-            // Create the loan request avec les bons noms de colonnes
+            // Récupérer l'agence de l'agriculteur
+            $agenceId = $user->agriculteur->agence_id;
+            
+            if (!$agenceId) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Votre profil agriculteur n\'est pas associé à une agence. Veuillez contacter l\'administration.');
+            }
+
+            // Create the loan request avec agence_id
             $loanRequest = $user->agriculteur->loanRequests()->create([
-                'amountRequested' => $validated['amount_requested'], // amountRequested au lieu de amount_requested
+                'amountRequested' => $validated['amount_requested'],
                 'purpose' => $validated['purpose'],
-                'status' => 'submitted', // status au lieu de loan_status
-                'submissionDate' => now(), // submissionDate au lieu de submission_date
-                'lastUpdated' => now(), // lastUpdated au lieu de last_updated
+                'status' => 'submitted',
+                'submissionDate' => now(),
+                'lastUpdated' => now(),
                 'loan_duration' => $validated['loan_duration'],
                 'farm_type' => $validated['farm_type'],
                 'land_size' => $validated['land_size'],
@@ -78,6 +87,7 @@ class LoanRequestController extends Controller
                 'expected_start_date' => $validated['expected_start_date'],
                 'expected_completion_date' => $validated['expected_completion_date'],
                 'additional_notes' => $validated['additional_notes'] ?? null,
+                'agence_id' => $agenceId, // ← AJOUTER CETTE LIGNE
             ]);
 
             // Create directory for this loan request's documents
@@ -96,7 +106,7 @@ class LoanRequestController extends Controller
                 }
             }
 
-            return redirect()->route('loanrequests.show', $loanRequest->id)
+            return redirect()->route('loan-requests.show', $loanRequest->id)
                 ->with('success', 'Votre demande de prêt a été soumise avec succès!');
 
         } catch (\Exception $e) {

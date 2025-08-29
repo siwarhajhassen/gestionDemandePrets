@@ -7,7 +7,7 @@ use App\Http\Controllers\LoanRequestController;
 use App\Http\Controllers\AgentBNAController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\AgriculteurController;
-
+use App\Http\Controllers\AdminController;
 
 Route::permanentRedirect('/', '/login');
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
@@ -56,13 +56,21 @@ Route::middleware(['auth'])->group(function () {
 });
 
 
-// Routes agriculteur en attente
-Route::middleware(['auth', 'agriculteur'])->group(function () {
+// Routes pour agriculteurs avec statut spécifique
+Route::middleware(['auth'])->group(function () {
     Route::get('/account/pending', function () {
+        // Vérifier que l'utilisateur est un agriculteur en attente
+        if (!auth()->user()->isAgriculteur() || auth()->user()->agriculteur->status !== 'pending') {
+            return redirect()->route('dashboard');
+        }
         return view('auth.pending-approval');
     })->name('account.pending');
     
     Route::get('/account/rejected', function () {
+        // Vérifier que l'utilisateur est un agriculteur rejeté
+        if (!auth()->user()->isAgriculteur() || auth()->user()->agriculteur->status !== 'rejected') {
+            return redirect()->route('dashboard');
+        }
         $reason = auth()->user()->agriculteur->rejection_reason;
         return view('auth.rejected', compact('reason'));
     })->name('account.rejected');
@@ -70,7 +78,7 @@ Route::middleware(['auth', 'agriculteur'])->group(function () {
 
 // Routes administrateur
 Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard.admin');
     
     // Gestion des agriculteurs
     Route::get('/agriculteurs/pending', [AdminController::class, 'pendingAgriculteurs'])->name('admin.agriculteurs.pending');

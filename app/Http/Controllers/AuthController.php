@@ -86,18 +86,26 @@ class AuthController extends Controller
                 $agriculteur = Auth::user()->agriculteur;
                 
                 if ($agriculteur->status === 'pending') {
-                    Auth::logout();
                     return redirect()->route('account.pending')
                         ->with('info', 'Votre compte est en attente de validation.');
                 }
                 
                 if ($agriculteur->status === 'rejected') {
-                    Auth::logout();
                     return redirect()->route('account.rejected')
                         ->with('error', 'Votre compte a été rejeté.');
                 }
             }
             
+            // Redirection basée sur le type d'utilisateur
+            if (Auth::user()->isAdmin()) {
+                return redirect()->route('dashboard.admin'); // ← Redirection vers le dashboard admin
+            }
+            
+            if (Auth::user()->isAgent()) {
+                return redirect()->route('agent.dashboard'); // ← Redirection vers le dashboard agent
+            }
+            
+            // Par défaut, rediriger vers le dashboard général
             return redirect()->intended('dashboard');
         }
 
