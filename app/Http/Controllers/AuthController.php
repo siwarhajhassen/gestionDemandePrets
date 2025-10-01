@@ -112,6 +112,8 @@ class AuthController extends Controller
         return back()->withErrors([
             'username' => 'Les identifiants fournis ne correspondent pas à nos enregistrements.',
         ])->onlyInput('username');
+        
+        
     }
 
     public function logout(Request $request)

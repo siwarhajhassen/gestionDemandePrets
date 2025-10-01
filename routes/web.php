@@ -36,23 +36,22 @@ Route::middleware(['auth'])->group(function () {
     // Agent BNA routes
      Route::prefix('agent')->name('agent.')->middleware(['auth', 'agent.bna'])->group(function () {
         Route::get('/dashboard', [AgentBNAController::class, 'dashboard'])->name('dashboard');
-        
+
         // Réclamations
         Route::get('/complaints', [AgentBNAController::class, 'viewAllComplaints'])->name('complaints');
         Route::get('/complaints/{id}', [AgentBNAController::class, 'showComplaint'])->name('complaints.show');
         Route::post('/complaints/{id}/respond', [AgentBNAController::class, 'respondToComplaint'])->name('complaints.respond');
         Route::post('/complaints/{id}/close', [AgentBNAController::class, 'closeComplaint'])->name('complaints.close');
-        
+
         // Demandes de prêt
         Route::get('/loan-requests', [AgentBNAController::class, 'viewAllLoanRequests'])->name('loan-requests');
         Route::get('/loan-requests/{id}', [AgentBNAController::class, 'openLoanRequest'])->name('loan-requests.show');
         Route::post('/loan-requests/{id}/update-status', [AgentBNAController::class, 'changeLoanStatus'])->name('loan-requests.update-status');
         Route::post('/loan-requests/{id}/request-documents', [AgentBNAController::class, 'requestMissingDocuments'])->name('loan-requests.request-documents');
         Route::post('/loan-requests/{id}/add-note', [AgentBNAController::class, 'addNoteToFile'])->name('loan-requests.add-note');
-        Route::get('/loan-requests/document/{document}/download', [LoanRequestController::class, 'downloadDocument'])
-         ->name('loan-requests.download-document');
-    }); 
-    
+        Route::get('/loan-requests/document/{document}/download', [LoanRequestController::class, 'downloadDocument'])->name('loan-requests.download-document');
+    });
+
 });
 
 
@@ -65,7 +64,7 @@ Route::middleware(['auth'])->group(function () {
         }
         return view('auth.pending-approval');
     })->name('account.pending');
-    
+
     Route::get('/account/rejected', function () {
         // Vérifier que l'utilisateur est un agriculteur rejeté
         if (!auth()->user()->isAgriculteur() || auth()->user()->agriculteur->status !== 'rejected') {
@@ -79,22 +78,22 @@ Route::middleware(['auth'])->group(function () {
 // Routes administrateur
 Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard.admin');
-    
+
     // Gestion des agriculteurs
     Route::get('/agriculteurs/pending', [AdminController::class, 'pendingAgriculteurs'])->name('admin.agriculteurs.pending');
     Route::post('/agriculteurs/{id}/approve', [AdminController::class, 'approveAgriculteur'])->name('admin.agriculteurs.approve');
     Route::post('/agriculteurs/{id}/reject', [AdminController::class, 'rejectAgriculteur'])->name('admin.agriculteurs.reject');
-    
+
     // Gestion des agents
     Route::get('/agents', [AdminController::class, 'agentsIndex'])->name('admin.agents.index');
     Route::get('/agents/create', [AdminController::class, 'createAgent'])->name('admin.agents.create');
     Route::post('/agents', [AdminController::class, 'storeAgent'])->name('admin.agents.store');
     Route::delete('/agents/{id}', [AdminController::class, 'destroyAgent'])->name('admin.agents.destroy');
-    
+
     // Gestion des agences
     Route::get('/agences', [AdminController::class, 'agencesIndex'])->name('admin.agences.index');
     Route::get('/agences/create', [AdminController::class, 'createAgence'])->name('admin.agences.create');
     Route::post('/agences', [AdminController::class, 'storeAgence'])->name('admin.agences.store');
     Route::delete('/agences/{id}', [AdminController::class, 'destroyAgence'])->name('admin.agences.destroy');
 });
-    
+
